@@ -3,6 +3,7 @@ import { Retool } from '@tryretool/custom-component-support'
 
 import { uploadToS3Smart } from './s3Utils'
 import { FileInput } from './components/FileInput'
+import { FolderInput } from './components/FolderInput'
 import { ImagePreview } from './components/ImagePreview'
 import { UploadProgress } from './components/UploadProgress'
 import { UploadResult } from './components/UploadResult'
@@ -24,6 +25,10 @@ export const StaticImageUpload: FC = () => {
   const [, setImageUrl] = Retool.useStateString({
     name: 'uploadedImageUrl',
     initialValue: ''
+  })
+  const [folderName, setFolderName] = Retool.useStateString({
+    name: 'folderName',
+    initialValue: 'uploads'
   })
 
   const onUploadSuccess = Retool.useEventCallback({ name: 'uploadSuccess' })
@@ -72,7 +77,7 @@ export const StaticImageUpload: FC = () => {
         const result = await uploadToS3Smart(
           selectedFile,
           config.s3,
-          { folder: 'uploads', acl: 'public-read' },
+          { folder: folderName || 'uploads', acl: 'public-read' },
           (progress) => {
             setUploadProgress(progress)
           }
@@ -116,6 +121,11 @@ export const StaticImageUpload: FC = () => {
       }}
     >
       <FileInput onChange={handleFileChange} />
+      <FolderInput
+        value={folderName}
+        onChange={setFolderName}
+        placeholder="uploads"
+      />
       {previewUrl && (
         <ImagePreview previewUrl={previewUrl} selectedFile={selectedFile} />
       )}
