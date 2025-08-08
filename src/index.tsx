@@ -7,7 +7,7 @@ import { ImagePreview } from './components/ImagePreview'
 import { UploadProgress } from './components/UploadProgress'
 import { UploadResult } from './components/UploadResult'
 import { UploadButton } from './components/UploadButton'
-import { s3Config } from './s3Config'
+import { config } from './config'
 
 export const StaticImageUpload: FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -28,6 +28,23 @@ export const StaticImageUpload: FC = () => {
 
   const onUploadSuccess = Retool.useEventCallback({ name: 'uploadSuccess' })
   const onUploadError = Retool.useEventCallback({ name: 'uploadError' })
+
+  const handleSetImageUrl = (url?: string) => {
+    // ex url: https://ablo-ai-tool-assets.s3.eu-central-1.amazonaws.com/uploads/cartoon-pet-style-referance_1754656294939_ysl89nj7yg8.jpg
+    // So normal base url is https://{config.s3.bucketName}.s3.{config.s3.region}.amazonaws.com/{key}
+    // If using Bunny CDN, replace S3 URL with CDN URL
+    // e.g. https://cdn.ablo.ai/uploads/cartoon-pet-style-referance_1754656294939_ysl89nj7yg8.jpg
+
+    if (!url) {
+      setImageUrl('')
+      return
+    }
+    const urlWithCdn = url.replace(
+      `https://${config.s3.bucketName}.s3.${config.s3.region}.amazonaws.com`,
+      config.bunnyCdn.baseUrl
+    )
+    setImageUrl(urlWithCdn)
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -54,11 +71,8 @@ export const StaticImageUpload: FC = () => {
         // Use smart S3 upload with multipart support and progress tracking
         const result = await uploadToS3Smart(
           selectedFile,
-          s3Config,
-          {
-            folder: 'uploads',
-            acl: 'public-read'
-          },
+          config.s3,
+          { folder: 'uploads', acl: 'public-read' },
           (progress) => {
             setUploadProgress(progress)
           }
@@ -67,10 +81,10 @@ export const StaticImageUpload: FC = () => {
         setUploadResult(result)
 
         if (result.success) {
-          setImageUrl(result.url || '')
+          handleSetImageUrl(result.url)
           onUploadSuccess()
         } else {
-          setImageUrl('')
+          handleSetImageUrl()
           onUploadError()
         }
       } catch (error) {
@@ -78,7 +92,7 @@ export const StaticImageUpload: FC = () => {
         const errorMessage =
           error instanceof Error ? error.message : 'Upload failed'
         setUploadResult({ success: false, error: errorMessage })
-        setImageUrl('')
+        handleSetImageUrl()
         onUploadError()
       } finally {
         setSelectedFile(null)

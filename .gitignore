@@ -14,4 +14,4 @@ dist/*
 
 .env
 
-src/s3Config.ts
+src/config.ts

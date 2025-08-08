@@ -3,7 +3,6 @@ import React from 'react'
 interface UploadResultProps {
   uploadResult: {
     success: boolean
-    url?: string
     error?: string
   } | null
   isUploading: boolean
@@ -32,22 +31,11 @@ export const UploadResult: React.FC<UploadResultProps> = ({
           fontSize: '12px',
           fontWeight: '500',
           color: uploadResult.success ? '#166534' : '#991b1b',
-          marginBottom: uploadResult.success && uploadResult.url ? '4px' : '0'
+          marginBottom: uploadResult.success ? '4px' : '0'
         }}
       >
         {uploadResult.success ? '✅ Upload successful!' : '❌ Upload failed'}
       </div>
-      {uploadResult.success && uploadResult.url && (
-        <div
-          style={{
-            fontSize: '10px',
-            color: '#166534',
-            wordBreak: 'break-all'
-          }}
-        >
-          URL: {uploadResult.url}
-        </div>
-      )}
       {!uploadResult.success && uploadResult.error && (
         <div
           style={{
