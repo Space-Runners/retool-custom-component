@@ -3,7 +3,6 @@ import { Retool } from '@tryretool/custom-component-support'
 
 import { uploadToS3Smart } from './s3Utils'
 import { FileInput } from './components/FileInput'
-import { FolderInput } from './components/FolderInput'
 import { ImagePreview } from './components/ImagePreview'
 import { UploadProgress } from './components/UploadProgress'
 import { UploadResult } from './components/UploadResult'
@@ -24,11 +23,15 @@ export const StaticImageUpload: FC = () => {
   // Expose uploadedImageUrl to Retool via useStateString
   const [, setImageUrl] = Retool.useStateString({
     name: 'uploadedImageUrl',
-    initialValue: ''
+    initialValue: '',
+    label: 'Uploaded Image URL',
+    description: 'The URL of the uploaded image, accessible via Retool queries.'
   })
-  const [folderName, setFolderName] = Retool.useStateString({
+  const [folderName] = Retool.useStateString({
     name: 'folderName',
-    initialValue: 'uploads'
+    initialValue: 'uploads',
+    label: 'Folder Name',
+    description: 'The folder in S3 where images will be uploaded'
   })
 
   const onUploadSuccess = Retool.useEventCallback({ name: 'uploadSuccess' })
@@ -121,11 +124,11 @@ export const StaticImageUpload: FC = () => {
       }}
     >
       <FileInput onChange={handleFileChange} />
-      <FolderInput
+      {/* <FolderInput
         value={folderName}
         onChange={setFolderName}
         placeholder="uploads"
-      />
+      /> */}
       {previewUrl && (
         <ImagePreview previewUrl={previewUrl} selectedFile={selectedFile} />
       )}
