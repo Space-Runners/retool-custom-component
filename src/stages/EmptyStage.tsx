@@ -1,10 +1,9 @@
 import React from 'react'
 import { FileInput } from '../components/FileInput'
+import { useImageUpload } from '../ImageUploadContext'
 
-interface EmptyStageProps {
-  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void
-}
+export const EmptyStage: React.FC = () => {
+  const { handleFileChange } = useImageUpload()
 
-export const EmptyStage: React.FC<EmptyStageProps> = ({ onFileChange }) => {
-  return <FileInput onChange={onFileChange} />
+  return <FileInput onChange={handleFileChange} />
 }

@@ -2,23 +2,17 @@ import React from 'react'
 import { ImagePreview } from '../components/ImagePreview'
 import { UploadProgress } from '../components/UploadProgress'
 import { UploadResult } from '../components/UploadResult'
+import { useImageUpload } from '../ImageUploadContext'
 
-interface UploadingStageProps {
-  previewUrl: string
-  selectedFile: File | null
-  uploadProgress: number
-  uploadResult: { success: boolean; url?: string; error?: string } | null
-}
+export const UploadingStage: React.FC = () => {
+  const { previewUrl, croppedFile, uploadProgress, uploadResult } =
+    useImageUpload()
 
-export const UploadingStage: React.FC<UploadingStageProps> = ({
-  previewUrl,
-  selectedFile,
-  uploadProgress,
-  uploadResult
-}) => {
+  if (!previewUrl) return null
+
   return (
     <>
-      <ImagePreview previewUrl={previewUrl} selectedFile={selectedFile} />
+      <ImagePreview previewUrl={previewUrl} selectedFile={croppedFile} />
       <UploadProgress uploadProgress={uploadProgress} />
       <UploadResult uploadResult={uploadResult} isUploading={true} />
     </>

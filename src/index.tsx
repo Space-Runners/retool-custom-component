@@ -9,21 +9,7 @@ import { UploadedStage } from './stages/UploadedStage'
 
 // Inner component that uses the context
 const ImageUploadContent: FC = () => {
-  const {
-    stage,
-    selectedFile,
-    previewUrl,
-    croppedFile,
-    uploadProgress,
-    uploadResult,
-    handleFileChange,
-    handleCropComplete,
-    handleCropCancel,
-    handleRemoveImage,
-    handleUpload,
-    handleDeleteUploaded,
-    handleUploadNew
-  } = useImageUpload()
+  const { stage } = useImageUpload()
 
   return (
     <div
@@ -40,48 +26,19 @@ const ImageUploadContent: FC = () => {
       }}
     >
       {/* Stage 1: Empty - User can select an image */}
-      {stage === 'empty' && <EmptyStage onFileChange={handleFileChange} />}
+      {stage === 'empty' && <EmptyStage />}
 
       {/* Stage 2: Crop - User can crop the selected image */}
-      {stage === 'crop' && previewUrl && (
-        <CropStage
-          previewUrl={previewUrl}
-          selectedFile={selectedFile}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
-        />
-      )}
+      {stage === 'crop' && <CropStage />}
 
       {/* Stage 3: Upload - User can upload or remove the image */}
-      {stage === 'upload' && previewUrl && (
-        <UploadStage
-          previewUrl={previewUrl}
-          selectedFile={croppedFile || selectedFile}
-          onUpload={handleUpload}
-          onRemove={handleRemoveImage}
-        />
-      )}
+      {stage === 'upload' && <UploadStage />}
 
       {/* Stage 4: Uploading - Everything disabled, waiting for upload */}
-      {stage === 'uploading' && previewUrl && (
-        <UploadingStage
-          previewUrl={previewUrl}
-          selectedFile={croppedFile || selectedFile}
-          uploadProgress={uploadProgress}
-          uploadResult={uploadResult}
-        />
-      )}
+      {stage === 'uploading' && <UploadingStage />}
 
       {/* Stage 5: Uploaded - Show success, user can delete or upload new */}
-      {stage === 'uploaded' && previewUrl && (
-        <UploadedStage
-          previewUrl={previewUrl}
-          selectedFile={croppedFile || selectedFile}
-          uploadResult={uploadResult}
-          onDelete={handleDeleteUploaded}
-          onUploadNew={handleUploadNew}
-        />
-      )}
+      {stage === 'uploaded' && <UploadedStage />}
     </div>
   )
 }

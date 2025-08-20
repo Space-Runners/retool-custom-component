@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { Retool } from '@tryretool/custom-component-support'
-import { uploadToS3Smart } from './s3Utils'
+import { uploadToS3Smart, deleteFromS3 } from './s3Utils'
 import { config } from './config'
 
 // Define the 5 main stages
@@ -21,6 +21,7 @@ interface ImageUploadState {
   croppedFile: File | null
   uploadProgress: number
   uploadResult: UploadResult | null
+  uploadedFileKey: string | null
   folderName: string
 }
 
@@ -31,7 +32,7 @@ interface ImageUploadActions {
   handleCropCancel: () => void
   handleRemoveImage: () => void
   handleUpload: () => Promise<void>
-  handleDeleteUploaded: () => void
+  handleDeleteUploaded: () => Promise<void>
   handleUploadNew: () => void
 }
 
@@ -67,6 +68,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
   const [croppedFile, setCroppedFile] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
+  const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null)
 
   // Retool state and callbacks
   const [, setImageUrl] = Retool.useStateString({
@@ -112,6 +114,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
       setStage('crop')
       setCroppedFile(null)
       setUploadResult(null)
+      setUploadedFileKey(null)
     } else {
       // Reset to empty stage
       setSelectedFile(null)
@@ -119,6 +122,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
       setStage('empty')
       setCroppedFile(null)
       setUploadResult(null)
+      setUploadedFileKey(null)
     }
   }
 
@@ -133,7 +137,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
 
   const handleCropCancel = () => {
     setStage('upload')
-    setCroppedFile(null)
+    setCroppedFile(selectedFile)
     // Keep original preview URL
   }
 
@@ -143,6 +147,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     setStage('empty')
     setCroppedFile(null)
     setUploadResult(null)
+    setUploadedFileKey(null)
   }
 
   const handleUpload = async () => {
@@ -167,10 +172,12 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
 
         if (result.success) {
           handleSetImageUrl(result.url)
+          setUploadedFileKey(result.key || null)
           setStage('uploaded')
           onUploadSuccess()
         } else {
           handleSetImageUrl()
+          setUploadedFileKey(null)
           setStage('upload') // Go back to upload stage on error
           onUploadError()
         }
@@ -180,13 +187,37 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
           error instanceof Error ? error.message : 'Upload failed'
         setUploadResult({ success: false, error: errorMessage })
         handleSetImageUrl()
+        setUploadedFileKey(null)
         setStage('upload') // Go back to upload stage on error
         onUploadError()
       }
     }
   }
 
-  const handleDeleteUploaded = () => {
+  const handleDeleteUploaded = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this image? This action cannot be undone.'
+    )
+
+    if (!confirmed) {
+      return // User cancelled, don't proceed with deletion
+    }
+
+    // If we have an uploaded file key, delete it from S3
+    if (uploadedFileKey) {
+      try {
+        const deleteResult = await deleteFromS3(uploadedFileKey, config.s3)
+        if (!deleteResult.success) {
+          console.error('Failed to delete file from S3:', deleteResult.error)
+          // Continue with UI reset even if S3 delete fails
+        }
+      } catch (error) {
+        console.error('Error deleting file from S3:', error)
+        // Continue with UI reset even if S3 delete fails
+      }
+    }
+
     // Reset to empty stage
     setSelectedFile(null)
     setPreviewUrl(null)
@@ -194,6 +225,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     setCroppedFile(null)
     setUploadResult(null)
     setUploadProgress(0)
+    setUploadedFileKey(null)
     handleSetImageUrl('')
   }
 
@@ -205,6 +237,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     setCroppedFile(null)
     setUploadResult(null)
     setUploadProgress(0)
+    setUploadedFileKey(null)
   }
 
   // Context value
@@ -216,6 +249,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     croppedFile,
     uploadProgress,
     uploadResult,
+    uploadedFileKey,
     folderName,
     // Actions
     handleFileChange,

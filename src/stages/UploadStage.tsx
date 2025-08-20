@@ -2,29 +2,23 @@ import React from 'react'
 import { ImagePreview } from '../components/ImagePreview'
 import { UploadButton } from '../components/UploadButton'
 import { RemoveButton } from '../components/RemoveButton'
+import { useImageUpload } from '../ImageUploadContext'
 
-interface UploadStageProps {
-  previewUrl: string
-  selectedFile: File | null
-  onUpload: () => void
-  onRemove: () => void
-}
+export const UploadStage: React.FC = () => {
+  const { previewUrl, croppedFile, handleUpload, handleRemoveImage } =
+    useImageUpload()
 
-export const UploadStage: React.FC<UploadStageProps> = ({
-  previewUrl,
-  selectedFile,
-  onUpload,
-  onRemove
-}) => {
+  if (!previewUrl) return null
+
   return (
     <>
-      <ImagePreview previewUrl={previewUrl} selectedFile={selectedFile} />
+      <ImagePreview previewUrl={previewUrl} selectedFile={croppedFile} />
       <UploadButton
-        onClick={onUpload}
-        selectedFile={selectedFile}
+        onClick={handleUpload}
+        selectedFile={croppedFile}
         isUploading={false}
       />
-      <RemoveButton onClick={onRemove} />
+      <RemoveButton onClick={handleRemoveImage} />
     </>
   )
 }
