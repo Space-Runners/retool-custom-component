@@ -1,113 +1,15 @@
-import React, { useState, type FC } from 'react'
-import { Retool } from '@tryretool/custom-component-support'
+import React, { type FC } from 'react'
 
-import { uploadToS3Smart } from './s3Utils'
-import { FileInput } from './components/FileInput'
-import { ImagePreview } from './components/ImagePreview'
-import { UploadProgress } from './components/UploadProgress'
-import { UploadResult } from './components/UploadResult'
-import { UploadButton } from './components/UploadButton'
-import { config } from './config'
+import { ImageUploadProvider, useImageUpload } from './ImageUploadContext'
+import { EmptyStage } from './stages/EmptyStage'
+import { CropStage } from './stages/CropStage'
+import { UploadStage } from './stages/UploadStage'
+import { UploadingStage } from './stages/UploadingStage'
+import { UploadedStage } from './stages/UploadedStage'
 
-export const StaticImageUpload: FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadResult, setUploadResult] = useState<{
-    success: boolean
-    url?: string
-    error?: string
-  } | null>(null)
-
-  // Expose uploadedImageUrl to Retool via useStateString
-  const [, setImageUrl] = Retool.useStateString({
-    name: 'uploadedImageUrl',
-    initialValue: '',
-    label: 'Uploaded Image URL',
-    description: 'The URL of the uploaded image, accessible via Retool queries.'
-  })
-  const [folderName] = Retool.useStateString({
-    name: 'folderName',
-    initialValue: 'uploads',
-    label: 'Folder Name',
-    description: 'The folder in S3 where images will be uploaded'
-  })
-
-  const onUploadSuccess = Retool.useEventCallback({ name: 'uploadSuccess' })
-  const onUploadError = Retool.useEventCallback({ name: 'uploadError' })
-
-  const handleSetImageUrl = (url?: string) => {
-    // ex url: https://ablo-ai-tool-assets.s3.eu-central-1.amazonaws.com/uploads/cartoon-pet-style-referance_1754656294939_ysl89nj7yg8.jpg
-    // So normal base url is https://{config.s3.bucketName}.s3.{config.s3.region}.amazonaws.com/{key}
-    // If using Bunny CDN, replace S3 URL with CDN URL
-    // e.g. https://cdn.ablo.ai/uploads/cartoon-pet-style-referance_1754656294939_ysl89nj7yg8.jpg
-
-    if (!url) {
-      setImageUrl('')
-      return
-    }
-    const urlWithCdn = url.replace(
-      `https://${config.s3.bucketName}.s3.${config.s3.region}.amazonaws.com`,
-      config.bunnyCdn.baseUrl
-    )
-    setImageUrl(urlWithCdn)
-  }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file)
-
-      // Create preview URL
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
-    } else {
-      setSelectedFile(null)
-      setPreviewUrl(null)
-    }
-  }
-
-  const handleUpload = async () => {
-    if (selectedFile) {
-      setIsUploading(true)
-      setUploadProgress(0)
-      setUploadResult(null)
-
-      try {
-        // Use smart S3 upload with multipart support and progress tracking
-        const result = await uploadToS3Smart(
-          selectedFile,
-          config.s3,
-          { folder: folderName || 'uploads', acl: 'public-read' },
-          (progress) => {
-            setUploadProgress(progress)
-          }
-        )
-
-        setUploadResult(result)
-
-        if (result.success) {
-          handleSetImageUrl(result.url)
-          onUploadSuccess()
-        } else {
-          handleSetImageUrl()
-          onUploadError()
-        }
-      } catch (error) {
-        console.error('Upload failed:', error)
-        const errorMessage =
-          error instanceof Error ? error.message : 'Upload failed'
-        setUploadResult({ success: false, error: errorMessage })
-        handleSetImageUrl()
-        onUploadError()
-      } finally {
-        setSelectedFile(null)
-        setIsUploading(false)
-      }
-    }
-  }
+// Inner component that uses the context
+const ImageUploadContent: FC = () => {
+  const { stage } = useImageUpload()
 
   return (
     <div
@@ -123,22 +25,29 @@ export const StaticImageUpload: FC = () => {
         border: '1px solid #e5e7eb'
       }}
     >
-      <FileInput onChange={handleFileChange} />
-      {/* <FolderInput
-        value={folderName}
-        onChange={setFolderName}
-        placeholder="uploads"
-      /> */}
-      {previewUrl && (
-        <ImagePreview previewUrl={previewUrl} selectedFile={selectedFile} />
-      )}
-      {isUploading && <UploadProgress uploadProgress={uploadProgress} />}
-      <UploadResult uploadResult={uploadResult} isUploading={isUploading} />
-      <UploadButton
-        onClick={handleUpload}
-        selectedFile={selectedFile}
-        isUploading={isUploading}
-      />
+      {/* Stage 1: Empty - User can select an image */}
+      {stage === 'empty' && <EmptyStage />}
+
+      {/* Stage 2: Crop - User can crop the selected image */}
+      {stage === 'crop' && <CropStage />}
+
+      {/* Stage 3: Upload - User can upload or remove the image */}
+      {stage === 'upload' && <UploadStage />}
+
+      {/* Stage 4: Uploading - Everything disabled, waiting for upload */}
+      {stage === 'uploading' && <UploadingStage />}
+
+      {/* Stage 5: Uploaded - Show success, user can delete or upload new */}
+      {stage === 'uploaded' && <UploadedStage />}
     </div>
+  )
+}
+
+// Main component that provides context
+export const StaticImageUpload: FC = () => {
+  return (
+    <ImageUploadProvider>
+      <ImageUploadContent />
+    </ImageUploadProvider>
   )
 }
