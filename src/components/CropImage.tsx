@@ -1,10 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react'
-import ReactCrop, {
-  Crop,
-  PixelCrop,
-  centerCrop,
-  makeAspectCrop
-} from 'react-image-crop'
+import ReactCrop, { Crop, PixelCrop, centerCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 
 interface CropImageProps {
@@ -78,15 +73,7 @@ export const CropImage: React.FC<CropImageProps> = ({
     (e: React.SyntheticEvent<HTMLImageElement>) => {
       const { width, height } = e.currentTarget
       const crop = centerCrop(
-        makeAspectCrop(
-          {
-            unit: '%',
-            width: 80
-          },
-          1, // aspect ratio (1:1 for square)
-          width,
-          height
-        ),
+        { unit: '%', width: 80, height: 60 },
         width,
         height
       )
@@ -183,7 +170,6 @@ export const CropImage: React.FC<CropImageProps> = ({
           crop={crop}
           onChange={(_, percentCrop) => setCrop(percentCrop)}
           onComplete={(c) => setCompletedCrop(c)}
-          aspect={1} // Square aspect ratio, change to undefined for free crop
           minWidth={50}
           minHeight={50}
         >
@@ -209,7 +195,7 @@ export const CropImage: React.FC<CropImageProps> = ({
           textAlign: 'center'
         }}
       >
-        Drag to select the area you want to crop
+        Drag to select the area you want to crop (any shape)
       </div>
     </div>
   )

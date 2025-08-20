@@ -1,6 +1,6 @@
 {
   "name": "retool-custom-component",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "spacerunners",
   "private": true,
   "dependencies": {
@@ -15,7 +15,9 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "build": "npx retool-ccl build",
     "dev": "npx retool-ccl dev",
+    "predeploy": "npm run build",
     "deploy": "npx retool-ccl deploy",
     "format": "prettier --write ."
   },
