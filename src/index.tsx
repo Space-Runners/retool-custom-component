@@ -3,7 +3,9 @@ import { Retool } from '@tryretool/custom-component-support'
 
 import { uploadToS3Smart } from './s3Utils'
 import { FileInput } from './components/FileInput'
+import { FolderInput } from './components/FolderInput'
 import { ImagePreview } from './components/ImagePreview'
+import { CropImage } from './components/CropImage'
 import { UploadProgress } from './components/UploadProgress'
 import { UploadResult } from './components/UploadResult'
 import { UploadButton } from './components/UploadButton'
@@ -14,6 +16,8 @@ export const StaticImageUpload: FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [isCropping, setIsCropping] = useState(false)
+  const [croppedFile, setCroppedFile] = useState<File | null>(null)
   const [uploadResult, setUploadResult] = useState<{
     success: boolean
     url?: string
@@ -60,17 +64,37 @@ export const StaticImageUpload: FC = () => {
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file)
 
-      // Create preview URL
+      // Create preview URL and start cropping stage
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
+      setIsCropping(true)
+      setCroppedFile(null)
     } else {
       setSelectedFile(null)
       setPreviewUrl(null)
+      setIsCropping(false)
+      setCroppedFile(null)
     }
   }
 
+  const handleCropComplete = (croppedFile: File) => {
+    setCroppedFile(croppedFile)
+    setIsCropping(false)
+
+    // Update preview URL to show cropped image
+    const croppedUrl = URL.createObjectURL(croppedFile)
+    setPreviewUrl(croppedUrl)
+  }
+
+  const handleCropCancel = () => {
+    setIsCropping(false)
+    setCroppedFile(null)
+    // Keep original preview URL
+  }
+
   const handleUpload = async () => {
-    if (selectedFile) {
+    const fileToUpload = croppedFile || selectedFile
+    if (fileToUpload) {
       setIsUploading(true)
       setUploadProgress(0)
       setUploadResult(null)
@@ -78,7 +102,7 @@ export const StaticImageUpload: FC = () => {
       try {
         // Use smart S3 upload with multipart support and progress tracking
         const result = await uploadToS3Smart(
-          selectedFile,
+          fileToUpload,
           config.s3,
           { folder: folderName || 'uploads', acl: 'public-read' },
           (progress) => {
@@ -124,19 +148,30 @@ export const StaticImageUpload: FC = () => {
       }}
     >
       <FileInput onChange={handleFileChange} />
-      {/* <FolderInput
-        value={folderName}
-        onChange={setFolderName}
-        placeholder="uploads"
-      /> */}
-      {previewUrl && (
-        <ImagePreview previewUrl={previewUrl} selectedFile={selectedFile} />
+
+      {/* Show cropping stage when user selects an image */}
+      {isCropping && previewUrl && (
+        <CropImage
+          previewUrl={previewUrl}
+          selectedFile={selectedFile}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
       )}
+
+      {/* Show preview only after cropping is done or skipped */}
+      {!isCropping && previewUrl && (
+        <ImagePreview
+          previewUrl={previewUrl}
+          selectedFile={croppedFile || selectedFile}
+        />
+      )}
+
       {isUploading && <UploadProgress uploadProgress={uploadProgress} />}
       <UploadResult uploadResult={uploadResult} isUploading={isUploading} />
       <UploadButton
         onClick={handleUpload}
-        selectedFile={selectedFile}
+        selectedFile={croppedFile || selectedFile}
         isUploading={isUploading}
       />
     </div>
