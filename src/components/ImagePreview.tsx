@@ -1,5 +1,5 @@
 import React from 'react'
-import { formatFileSize } from '../s3Utils'
+import { formatFileSize } from '../utils/s3Utils'
 
 interface ImagePreviewProps {
   previewUrl: string
