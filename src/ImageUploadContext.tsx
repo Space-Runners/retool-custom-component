@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { Retool } from '@tryretool/custom-component-support'
-import { uploadToGCS } from './utils/gcpUtils'
+import { uploadToGCS } from './services/gcp.service'
 
 // Define the 5 main stages
 export type Stage = 'empty' | 'crop' | 'upload' | 'uploading' | 'uploaded'
@@ -149,29 +149,17 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
       setUploadResult(null)
 
       try {
-        // Use smart GCS upload with progress tracking
-        const result = await uploadToGCS(
-          fileToUpload
-          // config.gcs,
-          // { folder: folderName || 'uploads' },
-          // (progress) => {
-          //   setUploadProgress(progress)
-          // }
-        )
+        const result = await uploadToGCS({
+          fileName: fileToUpload.name,
+          folderName: folderName || 'uploads',
+          image: fileToUpload,
+          contentType: fileToUpload.type
+        })
 
-        setUploadResult(result)
-
-        if (result.success) {
-          handleSetImageUrl(result.url)
-          setUploadedFileKey(result.key || null)
-          setStage('uploaded')
-          onUploadSuccess()
-        } else {
-          handleSetImageUrl()
-          setUploadedFileKey(null)
-          setStage('upload')
-          onUploadError()
-        }
+        setUploadResult({ success: true, url: result })
+        handleSetImageUrl(result)
+        setStage('uploaded')
+        onUploadSuccess()
       } catch (error) {
         console.error('Upload failed:', error)
         const errorMessage =
