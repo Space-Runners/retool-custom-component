@@ -51,7 +51,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
       {isUploading
         ? '⏳ Uploading...'
         : selectedFile
-          ? '📤 Upload to S3'
+          ? '📤 Upload'
           : '📁 Select an image first'}
     </button>
   )

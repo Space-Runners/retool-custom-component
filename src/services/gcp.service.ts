@@ -20,9 +20,10 @@ export async function uploadToGCS({
   contentType
 }: GCSUploadInput): Promise<string> {
   const { baseUrl, secret } = config.gcs
+  const plainFilename = fileName.split('.')[0]
   const signedUrlResponse = await axios.post(
     `${baseUrl}/storage/upload/static`,
-    { contentType, fileName, folderName },
+    { contentType, fileName: plainFilename, folderName },
     { headers: { 'x-retool-secret': secret } }
   )
   const url = signedUrlResponse.data.url
