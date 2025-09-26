@@ -5,13 +5,8 @@ import { UploadedActions } from '../components/UploadedActions'
 import { useImageUpload } from '../ImageUploadContext'
 
 export const UploadedStage: React.FC = () => {
-  const {
-    previewUrl,
-    croppedFile,
-    uploadResult,
-    handleUploadNew,
-    handleDeleteUploaded
-  } = useImageUpload()
+  const { previewUrl, croppedFile, uploadResult, handleUploadNew } =
+    useImageUpload()
 
   if (!previewUrl) return null
 
@@ -19,10 +14,7 @@ export const UploadedStage: React.FC = () => {
     <>
       <ImagePreview previewUrl={previewUrl} selectedFile={croppedFile} />
       <UploadResult uploadResult={uploadResult} isUploading={false} />
-      <UploadedActions
-        onUploadNew={handleUploadNew}
-        onDelete={handleDeleteUploaded}
-      />
+      <UploadedActions onUploadNew={handleUploadNew} />
     </>
   )
 }

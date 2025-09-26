@@ -29,5 +29,11 @@ export async function uploadToGCS({
   const url = signedUrlResponse.data.url
 
   await axios.put(url, image, { headers: { 'Content-Type': contentType } })
-  return url.split('?')[0]
+  const imageUrl = url.split('?')[0]
+
+  const cdnUrl = imageUrl.replace(
+    'https://storage.googleapis.com/ablo-static-images',
+    config.bunnyCdn.baseUrl
+  )
+  return cdnUrl
 }
