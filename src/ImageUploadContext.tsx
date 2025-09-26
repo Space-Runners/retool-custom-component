@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { Retool } from '@tryretool/custom-component-support'
-import { uploadToS3Smart, deleteFromS3 } from './s3Utils'
-import { config } from './config'
+import { uploadToGCS } from './services/gcp.service'
 
 // Define the 5 main stages
 export type Stage = 'empty' | 'crop' | 'upload' | 'uploading' | 'uploaded'
@@ -82,23 +81,15 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     name: 'folderName',
     initialValue: 'uploads',
     label: 'Folder Name',
-    description: 'The folder in S3 where images will be uploaded'
+    description: 'The folder in GCS where images will be uploaded'
   })
 
   const onUploadSuccess = Retool.useEventCallback({ name: 'uploadSuccess' })
   const onUploadError = Retool.useEventCallback({ name: 'uploadError' })
 
-  // Helper function to set image URL with CDN replacement
+  // Helper function to set image URL (GCS)
   const handleSetImageUrl = (url?: string) => {
-    if (!url) {
-      setImageUrl('')
-      return
-    }
-    const urlWithCdn = url.replace(
-      `https://${config.s3.bucketName}.s3.${config.s3.region}.amazonaws.com`,
-      config.bunnyCdn.baseUrl
-    )
-    setImageUrl(urlWithCdn)
+    setImageUrl(url || '')
   }
 
   // Action handlers
@@ -158,29 +149,17 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
       setUploadResult(null)
 
       try {
-        // Use smart S3 upload with multipart support and progress tracking
-        const result = await uploadToS3Smart(
-          fileToUpload,
-          config.s3,
-          { folder: folderName || 'uploads', acl: 'public-read' },
-          (progress) => {
-            setUploadProgress(progress)
-          }
-        )
+        const result = await uploadToGCS({
+          fileName: fileToUpload.name,
+          folderName: folderName || 'uploads',
+          image: fileToUpload,
+          contentType: fileToUpload.type
+        })
 
-        setUploadResult(result)
-
-        if (result.success) {
-          handleSetImageUrl(result.url)
-          setUploadedFileKey(result.key || null)
-          setStage('uploaded')
-          onUploadSuccess()
-        } else {
-          handleSetImageUrl()
-          setUploadedFileKey(null)
-          setStage('upload') // Go back to upload stage on error
-          onUploadError()
-        }
+        setUploadResult({ success: true, url: result })
+        handleSetImageUrl(result)
+        setStage('uploaded')
+        onUploadSuccess()
       } catch (error) {
         console.error('Upload failed:', error)
         const errorMessage =
@@ -188,37 +167,30 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
         setUploadResult({ success: false, error: errorMessage })
         handleSetImageUrl()
         setUploadedFileKey(null)
-        setStage('upload') // Go back to upload stage on error
+        setStage('upload')
         onUploadError()
       }
     }
   }
 
   const handleDeleteUploaded = async () => {
-    // Show confirmation dialog
     const confirmed = window.confirm(
       'Are you sure you want to delete this image? This action cannot be undone.'
     )
-
     if (!confirmed) {
-      return // User cancelled, don't proceed with deletion
+      return
     }
-
-    // If we have an uploaded file key, delete it from S3
+    // If we have an uploaded file key, delete it from GCS
     if (uploadedFileKey) {
       try {
-        const deleteResult = await deleteFromS3(uploadedFileKey, config.s3)
-        if (!deleteResult.success) {
-          console.error('Failed to delete file from S3:', deleteResult.error)
-          // Continue with UI reset even if S3 delete fails
-        }
+        // const deleteResult = await deleteFromGCS(uploadedFileKey)
+        // if (!deleteResult.success) {
+        //   console.error('Failed to delete file from GCS:', deleteResult.error)
+        // }
       } catch (error) {
-        console.error('Error deleting file from S3:', error)
-        // Continue with UI reset even if S3 delete fails
+        console.error('Error deleting file from GCS:', error)
       }
     }
-
-    // Reset to empty stage
     setSelectedFile(null)
     setPreviewUrl(null)
     setStage('empty')

@@ -7,6 +7,7 @@
     "@aws-sdk/client-s3": "^3.863.0",
     "@tryretool/custom-component-support": "latest",
     "@types/react-image-crop": "^8.1.6",
+    "axios": "^1.12.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-image-crop": "^11.0.10"
