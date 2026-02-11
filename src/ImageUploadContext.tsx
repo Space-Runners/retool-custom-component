@@ -22,6 +22,7 @@ interface ImageUploadState {
   uploadResult: UploadResult | null
   uploadedFileKey: string | null
   folderName: string
+  enableCrop: boolean
 }
 
 // Context actions interface
@@ -84,6 +85,14 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     description: 'The folder in GCS where images will be uploaded'
   })
 
+  const [enableCrop] = Retool.useStateBoolean({
+    name: 'enableCrop',
+    initialValue: true,
+    inspector: 'checkbox',
+    label: 'Enable Crop',
+    description: 'When enabled, users can crop the image before uploading. When disabled, the crop step is skipped.'
+  })
+
   const onUploadSuccess = Retool.useEventCallback({ name: 'uploadSuccess' })
   const onUploadError = Retool.useEventCallback({ name: 'uploadError' })
 
@@ -99,13 +108,19 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file)
 
-      // Create preview URL and move to crop stage
+      // Create preview URL
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
-      setStage('crop')
       setCroppedFile(null)
       setUploadResult(null)
       setUploadedFileKey(null)
+
+      if (enableCrop) {
+        setStage('crop')
+      } else {
+        setCroppedFile(file)
+        setStage('upload')
+      }
     } else {
       // Reset to empty stage
       setSelectedFile(null)
@@ -223,6 +238,7 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
     uploadResult,
     uploadedFileKey,
     folderName,
+    enableCrop,
     // Actions
     handleFileChange,
     handleCropComplete,
