@@ -111,11 +111,11 @@ export const ImageUploadProvider: React.FC<ImageUploadProviderProps> = ({
       // Create preview URL
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
-      setCroppedFile(null)
       setUploadResult(null)
       setUploadedFileKey(null)
 
       if (enableCrop) {
+        setCroppedFile(null)
         setStage('crop')
       } else {
         setCroppedFile(file)
