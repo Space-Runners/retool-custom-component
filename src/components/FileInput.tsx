@@ -2,13 +2,23 @@ import React from 'react'
 
 interface FileInputProps {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  multiple?: boolean
+  label?: string
+  inputId?: string
 }
 
-export const FileInput: React.FC<FileInputProps> = ({ onChange }) => {
+export const FileInput: React.FC<FileInputProps> = ({
+  onChange,
+  multiple = false,
+  label,
+  inputId = 'image-input'
+}) => {
+  const labelText = label || (multiple ? 'Choose Image File(s)' : 'Choose Image File')
+
   return (
     <div style={{ marginBottom: '16px' }}>
       <label
-        htmlFor="image-input"
+        htmlFor={inputId}
         style={{
           display: 'block',
           marginBottom: '8px',
@@ -17,7 +27,7 @@ export const FileInput: React.FC<FileInputProps> = ({ onChange }) => {
           color: '#374151'
         }}
       >
-        Choose Image File
+        {labelText}
       </label>
       <div
         style={{
@@ -27,9 +37,10 @@ export const FileInput: React.FC<FileInputProps> = ({ onChange }) => {
         }}
       >
         <input
-          id="image-input"
+          id={inputId}
           type="file"
           accept="image/*"
+          multiple={multiple}
           onChange={onChange}
           style={{
             width: '90%',

@@ -6,6 +6,7 @@ import { CropStage } from './stages/CropStage'
 import { UploadStage } from './stages/UploadStage'
 import { UploadingStage } from './stages/UploadingStage'
 import { UploadedStage } from './stages/UploadedStage'
+import { MultiImageUpload } from './MultiImageUpload'
 
 // Inner component that uses the context
 const ImageUploadContent: FC = () => {
@@ -50,4 +51,8 @@ export const StaticImageUpload: FC = () => {
       <ImageUploadContent />
     </ImageUploadProvider>
   )
+}
+
+export const StaticImageUploadMulti: FC = () => {
+  return <MultiImageUpload />
 }
